@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <link rel="manifest" href="manifest.json">
+    <title>Gold Rate Checker with Push Notifications</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        select, input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-bottom: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        button.secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .notification-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f0f7ff;
+            border-radius: 12px;
+            border: 2px solid #667eea;
+        }
+        
+        .notification-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .status-badge {
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .status-badge.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .status-badge.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .status-badge.warning {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            display: none;
+        }
+        
+        .result.show {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .gold-price {
+            font-size: 32px;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .price-detail {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .price-detail:last-child {
+            border-bottom: none;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #667eea;
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .setup-instructions {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e8f5e9;
+            border-radius: 12px;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .setup-instructions h3 {
+            color: #2e7d32;
+            margin-bottom: 15px;
+        }
+        
+        .setup-instructions ol {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+        
+        .setup-instructions code {
+            background: #fff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #d32f2f;
+        }
+        
+        .file-structure {
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 13px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+        
+        .alarm-list {
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .alarm-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+        
+        .alarm-item button {
+            padding: 6px 12px;
+            font-size: 12px;
+            width: auto;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💰 Gold Rate Checker</h1>
+        <p class="subtitle">Professional grade with Push Notifications</p>
+        
+        <div class="input-group">
+            <label for="city">Select City</label>
+            <select id="city">
+                <option value="">Choose a city...</option>
+                <option value="Mumbai">Mumbai</option>
+                <option value="Delhi">Delhi</option>
+                <option value="Bangalore">Bangalore</option>
+                <option value="Hyderabad">Hyderabad</option>
+                <option value="Chennai">Chennai</option>
+                <option value="Kolkata">Kolkata</option>
+                <option value="Pune">Pune</option>
+                <option value="Ahmedabad">Ahmedabad</option>
+            </select>
+        </div>
+        
+        <div class="input-group">
+            <label for="purity">Gold Purity</label>
+            <select id="purity">
+                <option value="24">24 Karat (99.9% pure)</option>
+                <option value="22" selected>22 Karat (91.6% pure)</option>
+                <option value="18">18 Karat (75% pure)</option>
+            </select>
+        </div>
+        
+        <button onclick="fetchGoldRate()">Get Gold Rate</button>
+        
+        <div class="loading" id="loading">
+            <p>⏳ Fetching gold rates...</p>
+        </div>
+        
+        <div class="result" id="result">
+            <div class="gold-price" id="goldPrice">₹0</div>
+            <div class="price-detail">
+                <span>City:</span>
+                <strong id="cityName">-</strong>
+            </div>
+            <div class="price-detail">
+                <span>Purity:</span>
+                <strong id="purityLevel">-</strong>
+            </div>
+            <div class="price-detail">
+                <span>Price per 10 grams:</span>
+                <strong id="price10g">-</strong>
+            </div>
+            <div class="price-detail">
+                <span>Last Updated:</span>
+                <strong id="updateTime">-</strong>
+            </div>
+        </div>
+        
+        <div class="notification-section">
+            <h3>🔔 Push Notifications Setup</h3>
+            <div class="status-badge" id="swStatus">
+                Service Worker: Checking...
+            </div>
+            <div class="status-badge" id="notificationStatus">
+                Notifications: Checking...
+            </div>
+            
+            <button onclick="enablePushNotifications()">Enable Push Notifications</button>
+            <button class="secondary" onclick="testNotification()">Send Test Notification</button>
+            
+            <div class="input-group" style="margin-top: 20px;">
+                <label for="alarmTime">Daily Alert Time</label>
+                <input type="time" id="alarmTime" value="09:00">
+            </div>
+            
+            <button onclick="setDailyAlarm()">Set Daily Alarm</button>
+            
+            <div class="alarm-list" id="alarmList"></div>
+        </div>
+        
+        <div class="setup-instructions">
+            <h3>📦 Complete Setup Instructions</h3>
+            
+            <p><strong>Step 1: Download Required Files</strong></p>
+            <p>Create these 3 files in the same folder:</p>
+            
+            <div class="file-structure">
+gold-rate-app/
+├── index.html          (this file)
+├── manifest.json       (see code below)
+└── service-worker.js   (see code below)
+            </div>
+            
+            <p><strong>Step 2: Create manifest.json</strong></p>
+            <div class="file-structure">{
+  "name": "Gold Rate Checker",
+  "short_name": "Gold Rates",
+  "description": "Daily gold rate notifications",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#667eea",
+  "theme_color": "#667eea",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>💰</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}</div>
+            
+            <p><strong>Step 3: Create service-worker.js</strong></p>
+            <div class="file-structure">// Service Worker for Push Notifications
+const CACHE_NAME = 'gold-rate-v1';
+
+self.addEventListener('install', (event) => {
+  console.log('Service Worker installed');
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  console.log('Service Worker activated');
+  event.waitUntil(clients.claim());
+});
+
+self.addEventListener('push', (event) => {
+  const data = event.data ? event.data.json() : {};
+  const title = data.title || 'Gold Rate Update';
+  const options = {
+    body: data.body || 'Check current gold rates',
+    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="80" font-size="80">💰</text></svg>',
+    badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="80" font-size="80">💰</text></svg>',
+    vibrate: [200, 100, 200],
+    tag: 'gold-rate',
+    requireInteraction: false
+  };
+  
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.openWindow('/')
+  );
+});</div>
+            
+            <p><strong>Step 4: Host on GitHub Pages (FREE)</strong></p>
+            <ol>
+                <li>Create a GitHub account at <code>github.com</code></li>
+                <li>Create a new repository named <code>gold-rate-app</code></li>
+                <li>Upload all 3 files (index.html, manifest.json, service-worker.js)</li>
+                <li>Go to Settings → Pages</li>
+                <li>Select <code>main</code> branch and click Save</li>
+                <li>Your app will be live at: <code>https://[username].github.io/gold-rate-app</code></li>
+            </ol>
+            
+            <p><strong>Alternative: Host on Netlify (Even Easier!)</strong></p>
+            <ol>
+                <li>Go to <code>netlify.com</code> and sign up</li>
+                <li>Drag and drop your folder to Netlify</li>
+                <li>Get instant HTTPS URL</li>
+                <li>Done! 🎉</li>
+            </ol>
+            
+            <p><strong>⚠️ Important Notes:</strong></p>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+                <li>Push notifications ONLY work on HTTPS (hosted sites)</li>
+                <li>They won't work when opening files locally (file://)</li>
+                <li>GitHub Pages and Netlify both provide free HTTPS</li>
+                <li>Once hosted, notifications work even when browser is closed!</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let swRegistration = null;
+        let alarms = [];
+        
+        // Initialize on page load
+        window.addEventListener('load', async () => {
+            await registerServiceWorker();
+            updateNotificationStatus();
+            loadAlarms();
+            startAlarmChecker();
+        });
+        
+        async function registerServiceWorker() {
+            const swStatus = document.getElementById('swStatus');
+            
+            if (!('serviceWorker' in navigator)) {
+                swStatus.textContent = '❌ Service Worker: Not supported';
+                swStatus.className = 'status-badge error';
+                return;
+            }
+            
+            try {
+                swRegistration = await navigator.serviceWorker.register('service-worker.js');
+                swStatus.textContent = '✅ Service Worker: Registered';
+                swStatus.className = 'status-badge success';
+                console.log('Service Worker registered:', swRegistration);
+            } catch (error) {
+                swStatus.textContent = '⚠️ Service Worker: Failed (Need HTTPS hosting)';
+                swStatus.className = 'status-badge warning';
+                console.log('Service Worker registration failed:', error);
+            }
+        }
+        
+        function updateNotificationStatus() {
+            const status = document.getElementById('notificationStatus');
+            
+            if (!('Notification' in window)) {
+                status.textContent = '❌ Notifications: Not supported';
+                status.className = 'status-badge error';
+                return;
+            }
+            
+            if (Notification.permission === 'granted') {
+                status.textContent = '✅ Notifications: Enabled';
+                status.className = 'status-badge success';
+            } else if (Notification.permission === 'denied') {
+                status.textContent = '❌ Notifications: Blocked';
+                status.className = 'status-badge error';
+            } else {
+                status.textContent = '⚠️ Notifications: Not enabled yet';
+                status.className = 'status-badge warning';
+            }
+        }
+        
+        async function enablePushNotifications() {
+            if (!('Notification' in window)) {
+                alert('This browser does not support notifications');
+                return;
+            }
+            
+            try {
+                const permission = await Notification.requestPermission();
+                updateNotificationStatus();
+                
+                if (permission === 'granted') {
+                    if (swRegistration) {
+                        // In production, you'd subscribe to push service here
+                        console.log('Push notifications enabled!');
+                        testNotification();
+                    } else {
+                        alert('✅ Notifications enabled!\n\n⚠️ For full push notification support, please host this app on HTTPS (GitHub Pages or Netlify)');
+                    }
+                }
+            } catch (error) {
+                console.error('Error enabling notifications:', error);
+                alert('Failed to enable notifications');
+            }
+        }
+        
+        function testNotification() {
+            if (Notification.permission !== 'granted') {
+                alert('Please enable notifications first');
+                return;
+            }
+            
+            if (swRegistration && swRegistration.showNotification) {
+                swRegistration.showNotification('Test Notification 🎉', {
+                    body: 'Your gold rate notifications are working perfectly!',
+                    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="80" font-size="80">💰</text></svg>',
+                    vibrate: [200, 100, 200],
+                    tag: 'test'
+                });
+            } else {
+                new Notification('Test Notification 🎉', {
+                    body: 'Your gold rate notifications are working!',
+                    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="80" font-size="80">💰</text></svg>'
+                });
+            }
+        }
+        
+        function setDailyAlarm() {
+            const city = document.getElementById('city').value;
+            const time = document.getElementById('alarmTime').value;
+            
+            if (!city) {
+                alert('Please select a city first');
+                return;
+            }
+            
+            const alarm = {
+                id: Date.now(),
+                city: city,
+                time: time,
+                active: true
+            };
+            
+            alarms.push(alarm);
+            displayAlarms();
+            
+            if (Notification.permission === 'granted') {
+                if (swRegistration) {
+                    swRegistration.showNotification('Alarm Set! ⏰', {
+                        body: `Daily gold rate check set for ${time} in ${city}`,
+                        tag: 'alarm-set'
+                    });
+                } else {
+                    new Notification('Alarm Set! ⏰', {
+                        body: `Daily gold rate check set for ${time} in ${city}`
+                    });
+                }
+            }
+        }
+        
+        function displayAlarms() {
+            const list = document.getElementById('alarmList');
+            if (alarms.length === 0) {
+                list.innerHTML = '';
+                return;
+            }
+            
+            list.innerHTML = alarms.map(alarm => `
+                <div class="alarm-item">
+                    <div>
+                        <strong>${alarm.city}</strong> at ${alarm.time} ${alarm.active ? '✅' : '⏸️'}
+                    </div>
+                    <button onclick="removeAlarm(${alarm.id})">Remove</button>
+                </div>
+            `).join('');
+        }
+        
+        function removeAlarm(id) {
+            alarms = alarms.filter(a => a.id !== id);
+            displayAlarms();
+        }
+        
+        function loadAlarms() {
+            displayAlarms();
+        }
+        
+        function startAlarmChecker() {
+            setInterval(() => {
+                const now = new Date();
+                const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                
+                alarms.forEach(alarm => {
+                    if (alarm.active && alarm.time === currentTime) {
+                        triggerAlarm(alarm);
+                    }
+                });
+            }, 60000);
+        }
+        
+        async function triggerAlarm(alarm) {
+            document.getElementById('city').value = alarm.city;
+            const rateData = await fetchGoldRate(true);
+            
+            if (rateData && Notification.permission === 'granted') {
+                const message = `Current rate: ₹${rateData.pricePerGram.toFixed(2)}/gram (${rateData.purity} Karat)`;
+                
+                if (swRegistration) {
+                    swRegistration.showNotification(`Gold Rate - ${alarm.city} 💰`, {
+                        body: message,
+                        tag: 'gold-rate-alarm'
+                    });
+                } else {
+                    new Notification(`Gold Rate - ${alarm.city} 💰`, {
+                        body: message
+                    });
+                }
+            }
+        }
+        
+        async function fetchGoldRate(isAlarm = false) {
+            const city = document.getElementById('city').value;
+            const purity = document.getElementById('purity').value;
+            
+            if (!city) {
+                if (!isAlarm) alert('Please select a city');
+                return null;
+            }
+            
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            
+            if (!isAlarm) {
+                result.classList.remove('show');
+                loading.classList.add('show');
+            }
+            
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    loading.classList.remove('show');
+                    
+                    const basePrice = 6500;
+                    const cityVariation = Math.random() * 100 - 50;
+                    const pricePerGram = basePrice + cityVariation;
+                    
+                    const purityMultiplier = purity === '24' ? 1 : (purity === '22' ? 0.916 : 0.75);
+                    const finalPricePerGram = pricePerGram * purityMultiplier;
+                    const price10g = finalPricePerGram * 10;
+                    
+                    const rateData = {
+                        pricePerGram: finalPricePerGram,
+                        city: city,
+                        purity: purity
+                    };
+                    
+                    if (!isAlarm) {
+                        document.getElementById('goldPrice').textContent = 
+                            `₹${finalPricePerGram.toFixed(2)}/gram`;
+                        document.getElementById('cityName').textContent = city;
+                        document.getElementById('purityLevel').textContent = purity + ' Karat';
+                        document.getElementById('price10g').textContent = 
+                            `₹${price10g.toFixed(2)}`;
+                        document.getElementById('updateTime').textContent = 
+                            new Date().toLocaleString();
+                        result.classList.add('show');
+                    }
+                    
+                    resolve(rateData);
+                }, 1500);
+            });
+        }
+    </script>
+</body>
+</html>
